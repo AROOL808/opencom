@@ -1,7 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\EnsureAdminIsLoggedIn;
+use App\Http\Controllers\Admin\ItemController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+
 
 Route::get('/', function () {
     // Data dummy produk hardcode untuk keperluan starter (tanpa query database)
@@ -106,10 +109,42 @@ Route::get('/admin/login', [AdminAuthController::class, 'showLoginForm'])->name(
 Route::post('/admin/login', [AdminAuthController::class, 'login'])->name('admin.login.post');
 Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
-// Rute Dashboard Admin (Diproteksi dengan cek session)
-Route::get('/admin/dashboard', function () {
-    if (!session('admin_logged_in')) {
-        return redirect()->route('admin.login')->withErrors(['username' => 'Silakan login terlebih dahulu.']);
-    }
-    return view('admin.dashboard');
-})->name('admin.dashboard');
+// --- Rute Dashboard Admin (Semua sub-rute di sini otomatis terlindungi) ---
+Route::prefix('admin/dashboard')
+    ->middleware(EnsureAdminIsLoggedIn::class)
+    ->name('admin.dashboard.')
+    ->group(function () {
+
+        // Redirect otomatis dari /admin/dashboard ke /admin/dashboard/profile
+        Route::get('/', function () {
+            return redirect()->route('admin.dashboard.profile');
+        });
+
+        // 1. Profil Toko (Route: /admin/dashboard/profile | Name: admin.dashboard.profile)
+        Route::get('/profile', function () {
+            return view('admin.dashboard.profile');
+        })->name('profile');
+
+        // 2. Kustomasi Toko (Route: /admin/dashboard/customization)
+        Route::get('/customization', function () {
+            return view('admin.dashboard.customization'); // Sesuaikan dengan nama view Anda
+        })->name('customization');
+
+        // 3. Item Produk (Route: /admin/dashboard/items)
+        Route::get('/items', [ItemController::class, 'index'])->name('items');
+        // CRUD Kategori
+        Route::post('/categories', [ItemController::class, 'storeCategory'])->name('categories.store');
+        Route::delete('/categories/{id}', [ItemController::class, 'destroyCategory'])->name('categories.destroy');
+        Route::put('/categories/{id}', [ItemController::class, 'updateCategory'])->name('categories.update');
+
+        // CRUD Produk
+        Route::post('/products', [ItemController::class, 'storeProduct'])->name('products.store');
+        Route::delete('/products/{id}', [ItemController::class, 'destroyProduct'])->name('products.destroy');
+        Route::put('/products/{id}', [ItemController::class, 'updateProduct'])->name('products.update');
+
+        // 4. Log Aktivitas Toko (Route: /admin/dashboard/logs)
+        Route::get('/logs', function () {
+            return view('admin.dashboard.logs');
+        })->name('logs');
+
+    });
