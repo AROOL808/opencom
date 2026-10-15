@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 
 Route::get('/', function () {
     // Data dummy produk hardcode untuk keperluan starter (tanpa query database)
@@ -100,10 +101,15 @@ Route::get('/login', function () {
 })->name('login');
 
 // --- Rute Admin ---
-Route::get('/admin/login', function () {
-    return view('admin.login');
-})->name('admin.login');
+// Rute Login Admin
+Route::get('/admin/login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
+Route::post('/admin/login', [AdminAuthController::class, 'login'])->name('admin.login.post');
+Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 
+// Rute Dashboard Admin (Diproteksi dengan cek session)
 Route::get('/admin/dashboard', function () {
+    if (!session('admin_logged_in')) {
+        return redirect()->route('admin.login')->withErrors(['username' => 'Silakan login terlebih dahulu.']);
+    }
     return view('admin.dashboard');
 })->name('admin.dashboard');

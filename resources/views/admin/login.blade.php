@@ -23,20 +23,53 @@
             <p class="text-gray-500">Panel Manajemen Toko</p>
         </div>
 
-        <form action="#" method="GET" class="space-y-5">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Email Admin</label>
-                <input type="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary outline-none transition" placeholder="admin@toko.com">
+        <!-- Alert Error -->
+        @if ($errors->has('username'))
+            <div class="mb-4 p-3 bg-red-100 border border-red-200 text-red-600 rounded-lg text-sm">
+                {{ $errors->first('username') }}
             </div>
+        @endif
+
+        <form action="{{ route('admin.login.post') }}" method="POST" class="space-y-5">
+            @csrf
+
+            <!-- Input Username -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input type="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary outline-none transition" placeholder="••••••••">
+                <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username Admin</label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" 
+                    required 
+                    autofocus
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary outline-none transition" 
+                    placeholder="username"
+                >
+            </div>
+
+            <!-- Input Password -->
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    required 
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary outline-none transition" 
+                    placeholder="password"
+                >
+            </div>
+
+            <div class="flex items-center justify-between text-sm">
+                <label class="flex items-center text-gray-600 cursor-pointer">
+                    <input type="checkbox" name="remember" class="rounded text-primary focus:ring-primary mr-2">
+                    Ingat saya
+                </label>
             </div>
             
-            <!-- Mengarahkan admin langsung ke dashboard saat diklik -->
-            <a href="{{ route('admin.dashboard') }}" class="w-full block text-center bg-gray-900 text-white font-semibold py-2.5 rounded-lg hover:bg-black transition">
+            <button type="submit" class="w-full block text-center bg-gray-900 text-white font-semibold py-2.5 rounded-lg hover:bg-black transition">
                 Masuk ke Dashboard
-            </a>
+            </button>
         </form>
     </div>
 
