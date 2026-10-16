@@ -31,4 +31,21 @@ class Pengguna extends Model
             }
         });
     }
+
+    public function pesanan()
+    { 
+        return $this->hasMany(Pesanan::class, 'user_id', 'user_id'); 
+    }
+
+    public function item_pesanan()
+    { 
+        return $this->hasManyThrough(
+            ItemPesanan::class, 
+            Pesanan::class, 
+            'user_id', // Foreign key di tabel pesanan
+            'order_id', // Foreign key di tabel item_pesanan
+            'user_id', // Local key di tabel pengguna
+            'order_id' // Local key di tabel pesanan
+        ); 
+    }
 }

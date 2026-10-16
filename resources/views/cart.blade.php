@@ -85,23 +85,58 @@
                 <!-- SISI KANAN: Ringkasan Pembayaran -->
                 <div class="lg:w-1/3">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 sticky top-24">
-                        <h2 class="text-lg font-bold text-gray-900 mb-6">Ringkasan Belanja</h2>
+                        <h2 class="text-lg font-bold text-gray-900 mb-4">Ringkasan Belanja</h2>
                         
-                        <div class="flex justify-between items-center mb-4 text-sm text-gray-600">
-                            <span>Total Harga ({{ count($cartItems) }} Barang)</span>
-                            <span>Rp {{ number_format($total, 0, ',', '.') }}</span>
-                        </div>
-                        
-                        <div class="border-t border-gray-100 my-4"></div>
-                        
-                        <div class="flex justify-between items-center mb-8">
-                            <span class="text-base font-bold text-gray-900">Total Tagihan</span>
-                            <span class="text-xl font-bold text-primary">Rp {{ number_format($total, 0, ',', '.') }}</span>
-                        </div>
+                        <form action="{{ route('checkout.process') }}" method="POST">
+                            @csrf
+                            
+                            <div class="mb-4 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                <p class="font-bold text-gray-800 mb-1">Dikirim ke:</p>
+                                <p>{{ $pengguna->alamat }}</p>
+                            </div>
 
-                        <a href="#" class="w-full block text-center bg-primary hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition duration-300 shadow-md">
-                            Lanjut ke Pembayaran
-                        </a>
+                            <!-- TAHAP 1: Pilih Kurir -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Pilih Kurir</label>
+                                <select id="courierSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary">
+                                    <option value="" disabled selected>-- Pilih Kurir --</option>
+                                    <option value="jne">JNE</option>
+                                    <option value="pos">POS Indonesia</option>
+                                    <option value="sicepat">SiCepat</option>
+                                </select>
+                            </div>
+
+                            <!-- TAHAP 2: Pilih Layanan (Muncul otomatis dari API) -->
+                            <div class="mb-4 hidden" id="serviceWrapper">
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Layanan Tersedia</label>
+                                <select id="serviceSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-primary">
+                                    <option value="" disabled selected>-- Pilih Layanan --</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Hidden input untuk disubmit -->
+                            <input type="hidden" name="layanan_ongkir" id="hiddenLayananOngkir">
+
+                            <div class="flex justify-between items-center mb-4 text-sm text-gray-600">
+                                <span>Subtotal Barang</span>
+                                <span>Rp {{ number_format($total, 0, ',', '.') }}</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-4 text-sm text-gray-600">
+                                <span>Ongkos Kirim</span>
+                                <span id="displayOngkir" class="font-semibold text-gray-900">Rp 0</span>
+                            </div>
+
+                            <div class="border-t border-gray-100 my-4"></div>
+                            
+                            <div class="flex justify-between items-center mb-8">
+                                <span class="text-base font-bold text-gray-900">Total Tagihan</span>
+                                <span class="text-xl font-bold text-primary" id="displayTotal">Rp {{ number_format($total, 0, ',', '.') }}</span>
+                            </div>
+
+                            <button type="submit" id="btnCheckout" class="w-full block text-center bg-primary hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition duration-300 shadow-md opacity-50 cursor-not-allowed" disabled>
+                                Lengkapi Pengiriman
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -119,6 +154,93 @@
             </div>
         @endif
     </main>
+    <script>
+    const courierSelect = document.getElementById('courierSelect');
+    const serviceWrapper = document.getElementById('serviceWrapper');
+    const serviceSelect = document.getElementById('serviceSelect');
+    const btnCheckout = document.getElementById('btnCheckout');
+    
+    const hiddenLayananOngkir = document.getElementById('hiddenLayananOngkir');
+    const displayOngkir = document.getElementById('displayOngkir');
+    const displayTotal = document.getElementById('displayTotal');
+    const subtotalBarang = {{ $total }};
 
+    // 1. Saat Kurir Dipilih (Tarik Data dari API)
+    courierSelect.addEventListener('change', function() {
+        let courier = this.value;
+        
+        // Reset tampilan saat kurir diganti
+        displayOngkir.innerText = "Mencari layanan...";
+        displayTotal.innerText = 'Rp ' + subtotalBarang.toLocaleString('id-ID');
+        serviceWrapper.classList.add('hidden');
+        serviceSelect.innerHTML = '<option value="" disabled selected>-- Pilih Layanan --</option>';
+        
+        btnCheckout.disabled = true;
+        btnCheckout.classList.add('opacity-50', 'cursor-not-allowed');
+        btnCheckout.innerText = "Lengkapi Pengiriman";
+
+        fetch(`{{ route('api.calculate_cost') }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ courier: courier })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.error) {
+                alert(data.error);
+                displayOngkir.innerText = "Gagal";
+                return;
+            }
+
+            if(data.data && data.data.length > 0) {
+                displayOngkir.innerText = "Pilih Layanan di Atas";
+                
+                // Masukkan data layanan ke dalam Dropdown ke-2
+                data.data.forEach(item => {
+                    let option = document.createElement('option');
+                    // Format value yang disubmit: "NAMA_LAYANAN|HARGA" (contoh: "REG|45000")
+                    option.value = `${item.service}|${item.cost}`;
+                    // Tampilan tulisan di dropdown
+                    option.text = `${item.service} - Rp ${item.cost.toLocaleString('id-ID')} (Est. ${item.etd})`;
+                    serviceSelect.appendChild(option);
+                });
+
+                // Tampilkan form layanan
+                serviceWrapper.classList.remove('hidden');
+            } else {
+                displayOngkir.innerText = "Kurir tidak tersedia";
+            }
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            displayOngkir.innerText = "Terjadi Kesalahan";
+        });
+    });
+
+    // 2. Saat Layanan Dipilih (Hitung Total & Buka Tombol Bayar)
+    serviceSelect.addEventListener('change', function() {
+        let selectedValue = this.value; // Contoh isi: "REG|45000"
+        if(!selectedValue) return;
+
+        let arrData = selectedValue.split('|');
+        let ongkir = parseInt(arrData[1]);
+        
+        // Simpan ke hidden input untuk backend OrderController
+        hiddenLayananOngkir.value = selectedValue;
+
+        // Ubah tampilan angka
+        let totalAkhir = subtotalBarang + ongkir;
+        displayOngkir.innerText = 'Rp ' + ongkir.toLocaleString('id-ID');
+        displayTotal.innerText = 'Rp ' + totalAkhir.toLocaleString('id-ID');
+
+        // Aktifkan Tombol
+        btnCheckout.disabled = false;
+        btnCheckout.classList.remove('opacity-50', 'cursor-not-allowed');
+        btnCheckout.innerText = "Bayar Sekarang";
+    });
+    </script>
 </body>
 </html>

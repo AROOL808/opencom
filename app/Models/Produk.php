@@ -21,12 +21,6 @@ class Produk extends Model
     ];
     public function category()
     {
-        /* 
-         * belongsTo(ModelTujuan::class, 'foreign_key_di_tabel_produk', 'primary_key_di_tabel_kategori')
-         * 
-         * Catatan: Jika Model kategori Anda bernama "Kategori" (bukan Category), 
-         * ubah Category::class menjadi Kategori::class di bawah ini.
-         */
         return $this->belongsTo(Kategori::class, 'category_id', 'category_id');
     }
 }

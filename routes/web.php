@@ -6,6 +6,8 @@ use App\Http\Controllers\Admin\ItemController;
 use App\Http\Controllers\UserAuthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\ConfigurationController;
+use App\Http\Controllers\OrderController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 
@@ -13,7 +15,11 @@ use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/product/{product_id}', [HomeController::class, 'showProduct'])->name('product.show');
 Route::post('/cart/add/{product_id}', [HomeController::class, 'addToCart'])->name('cart.add');
-
+Route::get('/orders', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
+Route::get('/orders/{order_id}/track', [OrderController::class, 'track'])->name('orders.track');
+Route::post('/checkout', [OrderController::class, 'processCheckout'])->name('checkout.process');
+Route::get('/api/locations', [CartController::class, 'searchLocation'])->name('api.locations');
+Route::post('/api/calculate-cost', [CartController::class, 'calculateCost'])->name('api.calculate_cost');
 // --- Rute User ---
 Route::get('/login', function () {
     return view('auth.login');
@@ -24,6 +30,7 @@ Route::get('/login', function () {
 Route::get('/admin/login', [AdminAuthController::class, 'showLoginForm'])->name('admin.login');
 Route::post('/admin/login', [AdminAuthController::class, 'login'])->name('admin.login.post');
 Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+
 
 // --- Rute Dashboard Admin (Semua sub-rute di sini otomatis terlindungi) ---
 Route::prefix('admin/dashboard')
@@ -37,9 +44,8 @@ Route::prefix('admin/dashboard')
         });
 
         // Profil Toko (Route: /admin/dashboard/profile | Name: admin.dashboard.profile)
-        Route::get('/profile', function () {
-            return view('admin.dashboard.profile');
-        })->name('profile');
+        Route::get('/profile', [ConfigurationController::class, 'editToko'])->name('profile');
+        Route::put('/profile/update', [ConfigurationController::class, 'updateToko'])->name('profile.update');
 
         // Kustomasi Toko (Route: /admin/dashboard/customization)
         Route::get('/customization', function () {
@@ -60,8 +66,12 @@ Route::prefix('admin/dashboard')
 
         // Log Aktivitas Toko (Route: /admin/dashboard/logs)
         Route::get('/logs', function () {
-            return view('admin.dashboard.logs');
+            return view('logs');
         })->name('logs');
+
+        // Pesanan
+        Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders');
+        Route::put('/orders/{order_id}/resi', [AdminOrderController::class, 'updateResi'])->name('orders.update_resi');
 
     }
     );

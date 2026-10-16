@@ -38,16 +38,16 @@
 <body class="antialiased bg-gray-50 text-gray-800 font-sans flex flex-col min-h-screen">
 
     <!-- HEADER / NAVBAR -->
-    <header class="bg-white shadow-sm sticky top-0 z-50">
+   <header class="bg-white shadow-sm sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <!-- Logo -->
                 <div class="flex-shrink-0 flex items-center cursor-pointer">
-                    <span class="text-2xl font-bold text-primary tracking-tight">OpenCom.</span>
+                    <a href="{{ route('home') }}" class="text-2xl font-bold text-primary tracking-tight">OpenCom.</a>
                 </div>
                 <!-- Nav Menu (Desktop) -->
                 <nav class="hidden md:flex space-x-8">
-                    <a href="#" class="text-gray-900 font-medium hover:text-primary transition">Beranda</a>
+                    <a href="{{ route('home') }}" class="text-gray-900 font-medium hover:text-primary transition">Beranda</a>
                     <a href="#kategori" class="text-gray-500 hover:text-gray-900 transition">Kategori</a>
                     <a href="#populer" class="text-gray-500 hover:text-gray-900 transition">Populer</a>
                     <a href="#produk" class="text-gray-500 hover:text-gray-900 transition">Produk</a>
@@ -55,32 +55,37 @@
                 <!-- Cart & Login Button -->
                 <div class="flex items-center space-x-4">
                     <a href="{{ route('cart.index') }}" class="text-gray-500 hover:text-gray-900 transition relative">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                    <!-- Render angka dari Controller, sembunyikan badge jika 0 -->
-                    @if($cartCount > 0)
-                    <span class="absolute -top-1 -right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">{{ $cartCount }}</span>
-                    @endif
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                        </svg>
+                        @if(isset($cartCount) && $cartCount > 0)
+                            <span class="absolute -top-1 -right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">{{ $cartCount }}</span>
+                        @endif
                     </a>
+
                     @if(session('user_logged_in'))
                     <!-- Area Dropdown Akun -->
                     <div class="relative">
-                        <!-- Tombol Avatar (Lingkaran dengan huruf pertama) -->
                         <button onclick="toggleUserDropdown()" type="button" class="flex items-center focus:outline-none">
                             <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg uppercase shadow-sm border border-indigo-200 hover:opacity-90 transition">
                                 {{ strtoupper(substr(session('username'), 0, 1)) }}
                             </div>
                         </button>
 
-                        <!-- Menu Dropdown (Hidden secara default) -->
+                        <!-- Menu Dropdown -->
                         <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
                             <div class="px-4 py-2 border-b border-gray-100">
                                 <p class="text-xs text-gray-400">Masuk sebagai</p>
                                 <p class="text-sm font-semibold text-gray-800 truncate">{{ session('username') }}</p>
                             </div>
                             
-                            <!-- Tombol Keluar / Logout -->
+                            <!-- OPSI BARU: Pesanan Saya -->
+                            <a href="{{ route('orders.index') }}" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 11h14l1 12H4L5 11z"></path></svg>
+                                Pesanan Saya
+                            </a>
+
+                            <!-- Logout -->
                             <form action="{{ route('logout') }}" method="POST">
                                 @csrf
                                 <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition flex items-center">
@@ -91,14 +96,9 @@
                         </div>
                     </div>
                     @else
-                        <!-- Jika belum login, tampilkan tombol Masuk dan Daftar -->
                     <div class="hidden md:flex items-center space-x-3">
-                        <a href="{{ route('login') }}" class="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition">
-                            Masuk
-                        </a>
-                        <a href="{{ route('register') }}" class=" text-black px-4 py-2 rounded-lg font-medium hover:bg-black hover:text-white border-2 border-black transition">
-                            Daftar
-                        </a>
+                        <a href="{{ route('login') }}" class="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition">Masuk</a>
+                        <a href="{{ route('register') }}" class="text-black px-4 py-2 rounded-lg font-medium hover:bg-black hover:text-white border-2 border-black transition">Daftar</a>
                     </div>
                     @endif
                 </div>
