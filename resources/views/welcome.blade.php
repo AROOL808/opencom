@@ -54,16 +54,53 @@
                 </nav>
                 <!-- Cart & Login Button -->
                 <div class="flex items-center space-x-4">
-                    <button class="text-gray-500 hover:text-gray-900 transition relative">
-                        <!-- Icon Cart SVG -->
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                        <span class="absolute -top-1 -right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">0</span>
-                    </button>
-                    <a href="{{ route('login') }}" class="hidden md:inline-flex bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition">
-                        Masuk
+                    <a href="{{ route('cart.index') }}" class="text-gray-500 hover:text-gray-900 transition relative">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                    <!-- Render angka dari Controller, sembunyikan badge jika 0 -->
+                    @if($cartCount > 0)
+                    <span class="absolute -top-1 -right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">{{ $cartCount }}</span>
+                    @endif
                     </a>
+                    @if(session('user_logged_in'))
+                    <!-- Area Dropdown Akun -->
+                    <div class="relative">
+                        <!-- Tombol Avatar (Lingkaran dengan huruf pertama) -->
+                        <button onclick="toggleUserDropdown()" type="button" class="flex items-center focus:outline-none">
+                            <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg uppercase shadow-sm border border-indigo-200 hover:opacity-90 transition">
+                                {{ strtoupper(substr(session('username'), 0, 1)) }}
+                            </div>
+                        </button>
+
+                        <!-- Menu Dropdown (Hidden secara default) -->
+                        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
+                            <div class="px-4 py-2 border-b border-gray-100">
+                                <p class="text-xs text-gray-400">Masuk sebagai</p>
+                                <p class="text-sm font-semibold text-gray-800 truncate">{{ session('username') }}</p>
+                            </div>
+                            
+                            <!-- Tombol Keluar / Logout -->
+                            <form action="{{ route('logout') }}" method="POST">
+                                @csrf
+                                <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition flex items-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                                    Keluar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    @else
+                        <!-- Jika belum login, tampilkan tombol Masuk dan Daftar -->
+                    <div class="hidden md:flex items-center space-x-3">
+                        <a href="{{ route('login') }}" class="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition">
+                            Masuk
+                        </a>
+                        <a href="{{ route('register') }}" class=" text-black px-4 py-2 rounded-lg font-medium hover:bg-black hover:text-white border-2 border-black transition">
+                            Daftar
+                        </a>
+                    </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -72,7 +109,7 @@
     <!-- MAIN CONTENT -->
     <main class="flex-grow">
         
-        <!-- 1. HERO SECTION DENGAN SLIDER (Menggunakan Alpine.js) -->
+        <!--  HERO SECTION DENGAN SLIDER (Menggunakan Alpine.js) -->
         <section 
             x-data="{ 
                 activeSlide: 0, 
@@ -131,7 +168,7 @@
             </div>
         </section>
 
-        <!-- 2. SECTION LIST KATEGORI (Menggantikan Produk Terpopuler sebelumnya) -->
+        <!--  SECTION LIST KATEGORI -->
         <section id="kategori" class="py-16 bg-gray-50 border-b border-gray-200">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center mb-10">
@@ -140,16 +177,30 @@
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                    @foreach($categories as $category)
-                        <a href="#kategori-{{ Str::slug($category['name']) }}" class="group relative rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 bg-white">
+                    <!-- Menggunakan $productsByCategory agar data relasi produk sudah tersedia -->
+                    @foreach($productsByCategory as $category)
+                        @php
+                            // Ambil produk pertama dari kategori ini (jika ada)
+                            $firstProduct = $category->produk->first();
+                            
+                            // Logika fallback: Jika kategori memiliki produk, gunakan foto produk pertama. 
+                            // Jika kategori masih kosong, gunakan placeholder warna.
+                            $bgImage = $firstProduct 
+                                ? asset('storage/products/' . $firstProduct->alamat_foto) 
+                                : 'https://ui-avatars.com/api/?name=' . urlencode($category->nama_kategori) . '&background=random';
+                        @endphp
+
+                        <a href="#kategori-{{ Str::slug($category->nama_kategori) }}" class="group relative rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 bg-white">
                             <div class="aspect-w-3 aspect-h-2 relative bg-gray-200">
-                                <img src="{{ $category['image'] }}" alt="{{ $category['name'] }}" class="object-cover w-full h-40 opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500">
+                                <!-- Menerapkan variabel $bgImage sebagai source gambar -->
+                                <img src="{{ $bgImage }}" alt="{{ $category->nama_kategori }}" class="object-cover w-full h-40 opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500">
+                                
                                 <!-- Overlay Gradient -->
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                                <!-- Content -->
+                                
+                                <!-- Nama Kategori -->
                                 <div class="absolute bottom-0 left-0 p-4 w-full flex items-center justify-between">
-                                    <span class="text-white font-semibold text-lg">{{ $category['name'] }}</span>
-                                    <span class="text-2xl">{{ $category['icon'] }}</span>
+                                    <span class="text-white font-semibold text-lg">{{ $category->nama_kategori }}</span>
                                 </div>
                             </div>
                         </a>
@@ -157,73 +208,103 @@
                 </div>
             </div>
         </section>
+
+        <!--  PRODUK TERPOPULER -->
         <section id="populer" class="py-16 bg-gray-50 border-b border-gray-200">
+            <!-- Notifikasi Pesan -->
+            @if(session('success'))
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-4">
+                    <div class="bg-green-100 text-green-700 p-3 rounded-lg text-sm text-center font-medium">{{ session('success') }}</div>
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-4">
+                    <div class="bg-red-100 text-red-700 p-3 rounded-lg text-sm text-center font-medium">{{ session('error') }}</div>
+                </div>
+            @endif
+
             <div class="text-center mb-10">
                 <h2 class="text-3xl font-bold text-gray-900">Produk Terpopuler</h2>
-                <p class="mt-3 text-gray-500">Jelajahi koleksi unggulan kami yang paling banyak diminati. Solusi terbaik yang dirancang khusus untuk memenuhi kebutuhan Anda.</p>
+                <p class="mt-3 text-gray-500">Jelajahi koleksi unggulan kami yang paling banyak diminati.</p>
             </div>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                     @foreach($popularProducts as $product)
                         <article class="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden group">
-                            <!-- Gambar Produk -->
                             <div class="relative overflow-hidden aspect-w-4 aspect-h-5 bg-gray-200">
-                                <img src="{{ $product['image'] }}" alt="{{ $product['name'] }}" class="object-cover w-full h-64 group-hover:scale-105 transition-transform duration-500">
+                                <img src="{{ asset('storage/products/' . $product->alamat_foto) }}" alt="{{ $product->nama_produk }}" class="object-cover w-full h-64 group-hover:scale-105 transition-transform duration-500">
                             </div>
-                            <!-- Detail Produk -->
                             <div class="p-5">
-                                <h4 class="text-lg font-semibold text-gray-900 truncate" title="{{ $product['name'] }}">
-                                    {{ $product['name'] }}
+                                <h4 class="text-lg font-semibold text-gray-900 truncate" title="{{ $product->nama_produk }}">
+                                    {{ $product->nama_produk }}
                                 </h4>
                                 <p class="text-primary font-bold mt-2">
-                                    Rp {{ number_format($product['price'], 0, ',', '.') }}
+                                    Rp {{ number_format($product->harga, 0, ',', '.') }}
                                 </p>
-                                <button class="mt-4 w-full bg-gray-50 hover:bg-primary hover:text-white border border-gray-200 text-gray-700 font-medium py-2 rounded-lg transition duration-200">
-                                    Tambah
-                                </button>
+                                 <a href="{{ route('product.show', $product->product_id) }}"
+                                        class="block text-center mt-2 w-full bg-primary hover:bg-indigo-700 border border-gray-200 text-white font-medium py-2 rounded-lg transition duration-200 ">
+                                        Detail
+                                </a>
+                                <!-- Form Tambah ke Keranjang -->
+                                <form action="{{ route('cart.add', $product->product_id) }}" method="POST" class="mt-2">
+                                    @csrf
+                                    <button type="button" 
+                                        onclick="openCartModal('{{ $product->product_id }}', '{{ addslashes($product->nama_produk) }}')" 
+                                        class="mt-2 w-full bg-gray-50 hover:bg-primary hover:text-white border border-gray-200 text-gray-700 font-medium py-2 rounded-lg transition duration-200">
+                                        Tambah
+                                    </button>
+                                </form>
+                              
                             </div>
                         </article>
                     @endforeach
                 </div>
             </div>
         </section>
-        <!-- 3. SECTION DAFTAR PRODUK BERDASARKAN KATEGORI -->
+
+        <!--  DAFTAR PRODUK BERDASARKAN KATEGORI -->
         <div id="produk" class="bg-white py-8">
             <div class="text-center mb-10">
                 <h2 class="text-3xl font-bold text-gray-900">Cari Berdasarkan Kategori</h2>
             </div>
-            @foreach($productsByCategory as $categoryName => $products)
-                <section id="kategori-{{ Str::slug($categoryName) }}" class="py-10">
+            @foreach($productsByCategory as $category)
+                <!-- Hanya tampilkan kategori yang memiliki produk -->
+                @if($category->produk->count() > 0)
+                <section id="kategori-{{ Str::slug($category->nama_kategori) }}" class="py-10">
                     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         
-                        <!-- Header Kategori & Tombol See More -->
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-8 pb-4 border-b border-gray-100">
-                            <h3 class="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">{{ $categoryName }}</h3>
+                            <h3 class="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">{{ $category->nama_kategori }}</h3>
                             <a href="#" class="group flex items-center text-primary font-medium hover:text-indigo-800 transition">
                                 Lihat Semua 
                                 <svg class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                             </a>
                         </div>
 
-                        <!-- Grid Produk Kategori -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                            @foreach($products as $product)
+                            @foreach($category->produk as $product)
                                 <article class="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden group">
-                                    <!-- Gambar Produk -->
                                     <div class="relative overflow-hidden aspect-w-4 aspect-h-5 bg-gray-200">
-                                        <img src="{{ $product['image'] }}" alt="{{ $product['name'] }}" class="object-cover w-full h-64 group-hover:scale-105 transition-transform duration-500">
+                                        <img src="{{ asset('storage/products/' . $product->alamat_foto) }}" alt="{{ $product->nama_produk }}" class="object-cover w-full h-64 group-hover:scale-105 transition-transform duration-500">
                                     </div>
-                                    <!-- Detail Produk -->
                                     <div class="p-5">
-                                        <h4 class="text-lg font-semibold text-gray-900 truncate" title="{{ $product['name'] }}">
-                                            {{ $product['name'] }}
+                                        <h4 class="text-lg font-semibold text-gray-900 truncate" title="{{ $product->nama_produk }}">
+                                            {{ $product->nama_produk }}
                                         </h4>
                                         <p class="text-primary font-bold mt-2">
-                                            Rp {{ number_format($product['price'], 0, ',', '.') }}
+                                            Rp {{ number_format($product->harga, 0, ',', '.') }}
                                         </p>
-                                        <button class="mt-4 w-full bg-gray-50 hover:bg-primary hover:text-white border border-gray-200 text-gray-700 font-medium py-2 rounded-lg transition duration-200">
-                                            Tambah
-                                        </button>
+                                        <a href="{{ route('product.show', $product->product_id) }}"
+                                            class="block text-center mt-2 w-full bg-primary hover:bg-indigo-700 border border-gray-200 text-white font-medium py-2 rounded-lg transition duration-200 ">
+                                            Detail
+                                        </a>
+                                        <!-- Form Tambah ke Keranjang -->
+                                        <form action="{{ route('cart.add', $product->product_id) }}" method="POST" class="mt-4">
+                                            @csrf
+                                            <button type="submit" class="w-full bg-gray-50 hover:bg-primary hover:text-white border border-gray-200 text-gray-700 font-medium py-2 rounded-lg transition duration-200">
+                                                Tambah
+                                            </button>
+                                        </form>
                                     </div>
                                 </article>
                             @endforeach
@@ -231,9 +312,10 @@
 
                     </div>
                 </section>
+                @endif
             @endforeach
         </div>
-        <!-- 4. SECTION LARGE COPYWRITING (BARU) -->
+        <!-- . SECTION LARGE COPYWRITING (BARU) -->
         <section class="bg-primary text-white py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
             <!-- Elemen Dekorasi Latar -->
             <div class="absolute top-0 left-0 w-64 h-64 bg-indigo-500 rounded-full blur-3xl opacity-30 -translate-x-1/2 -translate-y-1/2"></div>
@@ -254,7 +336,7 @@
             </div>
         </section>
 
-        <!-- 5. SECTION ALAMAT TOKO (BARU) -->
+        <!--  SECTION ALAMAT TOKO (BARU) -->
         <section class="py-16 bg-white border-t border-gray-100">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex flex-col md:flex-row bg-gray-50 rounded-3xl overflow-hidden shadow-sm border border-gray-100">
@@ -343,6 +425,84 @@
             </div>
         </div>
     </footer>
+    <!-- ================= MODAL TAMBAH KE KERANJANG ================= -->
+    <div id="modalKeranjang" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 transition-opacity">
+        <div class="bg-white p-6 rounded-2xl w-full max-w-sm shadow-xl transform transition-all relative">
+            
+            <!-- Header Modal -->
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-900">Masukan Keranjang</h3>
+                <button type="button" onclick="closeCartModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <!-- Nama Produk Terpilih -->
+            <p id="modalProductName" class="text-gray-600 text-sm mb-5 font-medium truncate"></p>
+            
+            <!-- Form Pengisian Jumlah -->
+            <form id="formCartModal" method="POST" action="">
+                @csrf
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">Atur Jumlah</label>
+                    <div class="flex items-center border border-gray-300 rounded-lg overflow-hidden w-32 shadow-sm">
+                        <button type="button" onclick="decrementQty()" class="px-4 py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-black transition font-bold text-lg">-</button>
+                        <input type="number" name="jumlah" id="inputQty" value="1" min="1" class="w-full text-center border-0 focus:ring-0 p-2 outline-none font-semibold text-gray-800" required readonly>
+                        <button type="button" onclick="incrementQty()" class="px-4 py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-black transition font-bold text-lg">+</button>
+                    </div>
+                </div>
+                
+                <button type="submit" class="w-full bg-primary hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg shadow-md transition duration-300">
+                    Konfirmasi
+                </button>
+            </form>
+        </div>
+    </div>
+    <script>
+        // Fungsi untuk membuka/menutup dropdown menu profil
+        function toggleUserDropdown() {
+            const menu = document.getElementById('userDropdownMenu');
+            menu.classList.toggle('hidden');
+        }
 
+        // Menutup dropdown jika pengguna mengklik di luar area avatar/menu
+        window.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('userDropdownMenu');
+            const button = dropdown?.previousElementSibling;
+            if (dropdown && !dropdown.contains(e.target) && !button?.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+        function openCartModal(productId, productName) {
+            // 1. Tampilkan nama produk ke dalam modal
+            document.getElementById('modalProductName').innerText = productName;
+            
+            // 2. Buat URL dinamis sesuai ID produk dan setel ke action form
+            let baseUrl = "{{ url('/cart/add') }}";
+            document.getElementById('formCartModal').action = baseUrl + '/' + productId;
+            
+            // 3. Reset kuantitas ke 1 setiap kali modal dibuka
+            document.getElementById('inputQty').value = 1;
+            
+            // 4. Buka modal
+            document.getElementById('modalKeranjang').classList.remove('hidden');
+        }
+
+        function closeCartModal() {
+            document.getElementById('modalKeranjang').classList.add('hidden');
+        }
+
+        function incrementQty() {
+            let input = document.getElementById('inputQty');
+            input.value = parseInt(input.value) + 1;
+        }
+
+        function decrementQty() {
+            let input = document.getElementById('inputQty');
+            if (parseInt(input.value) > 1) {
+                input.value = parseInt(input.value) - 1;
+            }
+        }
+    </script>
 </body>
 </html>
