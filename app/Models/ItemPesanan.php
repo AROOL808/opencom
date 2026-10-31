@@ -15,7 +15,6 @@ class ItemPesanan extends Model
         'product_id',
         'jumlah',
         'harga_satuan',
-        'subtotal',
     ];
 
     public function pesanan()

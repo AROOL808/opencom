@@ -8,6 +8,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ConfigurationController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 
@@ -17,7 +18,6 @@ Route::get('/product/{product_id}', [HomeController::class, 'showProduct'])->nam
 Route::post('/cart/add/{product_id}', [HomeController::class, 'addToCart'])->name('cart.add');
 Route::get('/orders', [\App\Http\Controllers\OrderController::class, 'index'])->name('orders.index');
 Route::get('/orders/{order_id}/track', [OrderController::class, 'track'])->name('orders.track');
-Route::post('/checkout', [OrderController::class, 'processCheckout'])->name('checkout.process');
 Route::get('/api/locations', [CartController::class, 'searchLocation'])->name('api.locations');
 Route::post('/api/calculate-cost', [CartController::class, 'calculateCost'])->name('api.calculate_cost');
 // --- Rute User ---
@@ -100,7 +100,9 @@ Route::post('/logout', function (Request $request) {
     return redirect()->route('home')->with('success', 'Berhasil keluar akun.');
 })->name('logout');
 
-// Pastikan rute ini berada di area yang bisa diakses publik (Controller sudah menangani proteksi login)
+// Cart, Order, dan Payment
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::patch('/cart/{item_cart_id}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/cart/{item_cart_id}', [CartController::class, 'destroy'])->name('cart.destroy');
+Route::post('/checkout', [\App\Http\Controllers\OrderController::class, 'processCheckout'])->name('checkout.process');
+Route::get('/orders/{order_id}/payment', [\App\Http\Controllers\OrderController::class, 'payNow'])->name('orders.payment');

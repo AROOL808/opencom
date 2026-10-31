@@ -43,7 +43,8 @@ class UserAuthController extends Controller
             return redirect()->route('register.complete');
 
         } catch (\Exception $e) {
-            return redirect()->route('register')->withErrors(['error' => 'Gagal terhubung dengan Google.']);
+            // return redirect()->route('register')->withErrors(['error' => 'Gagal terhubung dengan Google.']);
+            return redirect()->route('register')->withErrors(['error' => $e->getMessage()]);
         }
     }
 

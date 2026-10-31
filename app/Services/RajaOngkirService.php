@@ -8,13 +8,18 @@ class RajaOngkirService
 {
     protected $apiKey;
     protected $baseUrl;
-    protected $paymentUrl; // URL untuk API Payment
+    
+    // Kredensial khusus Payment
+    protected $paymentApiKey;
+    protected $paymentUrl;
 
     public function __construct()
     {
         $this->apiKey = env('RAJAONGKIR_API_KEY');
-        $this->baseUrl = env('RAJAONGKIR_BASE_URL', 'https://api.rajaongkir.com/starter');
+        $this->baseUrl = env('RAJAONGKIR_BASE_URL', 'https://rajaongkir.komerce.id/api/v1');
         
+        $this->paymentApiKey = env('KOMERCE_PAYMENT_API_KEY');
+        $this->paymentUrl = env('KOMERCE_PAYMENT_URL', 'https://api-sandbox.collaborator.komerce.id');
     }
 
     // 1. Cek Ongkos Kirim
@@ -73,6 +78,26 @@ class RajaOngkirService
                 'price' => 'lowest'
             ]);
             
+        return $response->json();
+    }
+    
+    public function createPayment($orderAnotherId, $amount, $customer, $items, $paymentType = 'va', $channelCode = 'BCA')
+    {
+        $response = Http::withHeaders([
+            'x-api-key' => $this->paymentApiKey,
+            'Content-Type' => 'application/json'
+        ])->post($this->paymentUrl . '/user/api/v1/user/payment/create', [
+            'order_id' => $orderAnotherId, // Menggunakan order_another_id yang unique
+            'payment_type' => $paymentType, // contoh: 'va' atau 'qris'
+            'channel_code' => $channelCode, // contoh: 'BCA' atau '' (kosong untuk qris)
+            'amount' => (int) $amount,
+            'customer' => $customer,
+            'items' => $items,
+            'expiry_duration' => 3600,
+            'callback_url' => url('/api/payment/callback'),
+            'callback_api_key' => '123456789'
+        ]);
+
         return $response->json();
     }
 }
