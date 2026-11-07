@@ -129,7 +129,7 @@
 
     <!-- MAIN CONTENT -->
     <main class="flex-grow">
-        
+        @include('search.form')
         <!--  HERO SECTION DENGAN SLIDER (Menggunakan Alpine.js) -->
         <section 
             x-data="{ 

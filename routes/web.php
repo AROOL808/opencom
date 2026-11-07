@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\AdminBlockchainController;
+use \App\Http\Controllers\SearchController;
 
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -108,5 +109,7 @@ Route::post('/logout', function (Request $request) {
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::patch('/cart/{item_cart_id}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/cart/{item_cart_id}', [CartController::class, 'destroy'])->name('cart.destroy');
-Route::post('/checkout', [\App\Http\Controllers\OrderController::class, 'processCheckout'])->name('checkout.process');
-Route::get('/orders/{order_id}/payment', [\App\Http\Controllers\OrderController::class, 'payNow'])->name('orders.payment');
+Route::post('/checkout', [OrderController::class, 'processCheckout'])->name('checkout.process');
+Route::get('/orders/{order_id}/payment', [OrderController::class, 'payNow'])->name('orders.payment');
+
+Route::get('/search', SearchController::class)->middleware('throttle:60,1')->name('search');
