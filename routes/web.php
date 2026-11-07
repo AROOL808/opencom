@@ -11,6 +11,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\AdminBlockchainController;
 
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -72,7 +73,10 @@ Route::prefix('admin/dashboard')
         // Pesanan
         Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders');
         Route::put('/orders/{order_id}/resi', [AdminOrderController::class, 'updateResi'])->name('orders.update_resi');
+        Route::put('/orders/{order_id}/status', [AdminOrderController::class, 'updateStatus'])->name('orders.update_status');
 
+        Route::get('/blockchain', [AdminBlockchainController::class, 'index'])->name('blockchain');
+        Route::post('/blockchain/revoke/{order_id}', [AdminBlockchainController::class, 'revokeOrder'])->name('blockchain.revoke');
     }
     );
 

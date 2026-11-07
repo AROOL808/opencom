@@ -5,4 +5,4 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OrderController;
 
 
-Route::post('/payment/callback', [OrderController::class, 'paymentCallback']);
+Route::post('/payment/callback', [OrderController::class, 'paymentCallback']);  

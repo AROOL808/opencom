@@ -1,49 +1,70 @@
+@php
+    // Ambil data konfigurasi dari database
+    $konfig = \App\Models\Konfigurasi::first();
+    
+    // Set fallback default jika kosong
+    $fontName = $konfig->alamat_font ?? 'Inter';
+    $primaryColor = $konfig->warna_item ?? '#4F46E5';
+    $navColor = $konfig->warna_navigator ?? '#ffffff';
+    $bgColor = $konfig->warna_background ?? '#f9fafb';
+    $textColor = $konfig->warna_font ?? '#1f2937';
+    $namaToko = $konfig->nama_toko ?? 'OpenCom.';
+    $alamat = $konfig->alamat_toko ?? '-';
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
-    <!-- SEO Meta Tags -->
-    <title>OpenCom - E-Commerce Starter</title>
-    <meta name="description" content="OpenCom adalah platform stater e-commerce terbaik untuk toko anda.">
+    <title>{{ $namaToko }} - E-Commerce</title>
+    <meta name="description" content="{{ $namaToko }} adalah platform e-commerce terbaik untuk toko anda.">
 
-    <!-- Fonts -->
+    <!-- Dinamis Google Fonts (Membaca nama font dari database) -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family={{ urlencode($fontName) }}:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Alpine.js (Sangat disarankan di ekosistem Laravel untuk interaktivitas ringan seperti Slider) -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-    <!-- Konfigurasi Custom Font untuk Tailwind -->
+    <!-- Injeksi Tailwind Config Dinamis -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        sans: ['"{{ $fontName }}"', 'sans-serif'],
                     },
                     colors: {
-                        primary: '#4F46E5', // Indigo-600
-                        secondary: '#111827', // Gray-900
+                        primary: '{{ $primaryColor }}',
+                        customBg: '{{ $bgColor }}',
+                        customNav: '{{ $navColor }}',
+                        customText: '{{ $textColor }}'
                     }
                 }
             }
         }
     </script>
 </head>
-<body class="antialiased bg-gray-50 text-gray-800 font-sans flex flex-col min-h-screen">
+<body class="antialiased bg-customBg text-customText font-sans flex flex-col min-h-screen">
 
-    <!-- HEADER / NAVBAR -->
-   <header class="bg-white shadow-sm sticky top-0 z-50">
+    <!-- Terapkan Warna Navbar Dinamis pada Header -->
+    <header class="bg-customNav shadow-sm sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
-                <!-- Logo -->
+                
+                <!-- Logo Dinamis -->
                 <div class="flex-shrink-0 flex items-center cursor-pointer">
-                    <a href="{{ route('home') }}" class="text-2xl font-bold text-primary tracking-tight">OpenCom.</a>
+                    <a href="{{ route('home') }}">
+                        @if($konfig && $konfig->alamat_logo)
+                            <!-- Menampilkan Gambar Logo jika URL diisi -->
+                            <img src="{{ $konfig->alamat_logo }}" alt="{{ $namaToko }}" class="h-8 w-auto object-contain">
+                        @else
+                            <!-- Fallback Teks jika Logo kosong -->
+                            <span class="text-2xl font-bold text-primary tracking-tight">{{ $namaToko }}</span>
+                        @endif
+                    </a>
                 </div>
                 <!-- Nav Menu (Desktop) -->
                 <nav class="hidden md:flex space-x-8">
@@ -139,7 +160,7 @@
                                 <span x-text="slide.title.split(' ')[0]" class="text-primary"></span> 
                                 <span x-text="slide.title.substring(slide.title.indexOf(' ') + 1)"></span>
                             </h1>
-                            <p class="text-lg text-gray-300 max-w-md mx-auto md:mx-0" x-text="slide.desc"></p>
+                            <p class="text-lg text-white max-w-md mx-auto md:mx-0" x-text="slide.desc"></p>
                             <div class="pt-4">
                                 <a href="#produk" class="inline-block bg-primary hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transition duration-300" x-text="slide.cta"></a>
                             </div>
@@ -299,9 +320,11 @@
                                             Detail
                                         </a>
                                         <!-- Form Tambah ke Keranjang -->
-                                        <form action="{{ route('cart.add', $product->product_id) }}" method="POST" class="mt-4">
+                                        <form action="{{ route('cart.add', $product->product_id) }}" method="POST" class="mt-2">
                                             @csrf
-                                            <button type="submit" class="w-full bg-gray-50 hover:bg-primary hover:text-white border border-gray-200 text-gray-700 font-medium py-2 rounded-lg transition duration-200">
+                                            <button type="button" 
+                                                onclick="openCartModal('{{ $product->product_id }}', '{{ addslashes($product->nama_produk) }}')" 
+                                                class="mt-2 w-full bg-gray-50 hover:bg-primary hover:text-white border border-gray-200 text-gray-700 font-medium py-2 rounded-lg transition duration-200">
                                                 Tambah
                                             </button>
                                         </form>
@@ -316,20 +339,20 @@
             @endforeach
         </div>
         <!-- . SECTION LARGE COPYWRITING (BARU) -->
-        <section class="bg-primary text-white py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <section class="primary text-white py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
             <!-- Elemen Dekorasi Latar -->
-            <div class="absolute top-0 left-0 w-64 h-64 bg-indigo-500 rounded-full blur-3xl opacity-30 -translate-x-1/2 -translate-y-1/2"></div>
-            <div class="absolute bottom-0 right-0 w-80 h-80 bg-indigo-800 rounded-full blur-3xl opacity-40 translate-x-1/3 translate-y-1/3"></div>
+            <div class="absolute top-0 left-0 w-64 h-64 bg-primary rounded-full blur-3xl opacity-20 -translate-x-1/2 -translate-y-1/2"></div>
+            <div class="absolute bottom-0 right-0 w-80 h-80 bg-primary rounded-full blur-3xl opacity-20 translate-x-1/3 translate-y-1/3"></div>
             
             <div class="max-w-4xl mx-auto text-center space-y-8 relative z-10">
                 <h2 class="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
                     Kualitas Premium. <br> Gaya Autentik. Harga Terjangkau.
                 </h2>
-                <p class="text-lg md:text-xl text-indigo-100 font-medium max-w-2xl mx-auto leading-relaxed">
+                <p class="text-lg md:text-xl text-white font-medium max-w-2xl mx-auto leading-relaxed">
                     Kami percaya bahwa setiap orang berhak tampil percaya diri dan menawan tanpa harus merogoh kocek terlalu dalam. Mulai perjalanan gaya Anda hari ini bersama OpenCom.
                 </p>
                 <div class="pt-4">
-                    <a href="#produk" class="inline-block bg-white text-primary font-bold py-3.5 px-10 rounded-full shadow-xl hover:bg-gray-100 hover:scale-105 transition-all duration-300">
+                    <a href="#produk" class="inline-block bg-primary text-white font-bold py-3.5 px-10 rounded-full shadow-xl hover:bg-gray-100 hover:scale-105 transition-all duration-300">
                         Belanja Sekarang
                     </a>
                 </div>
@@ -353,8 +376,8 @@
                             <li class="flex items-start">
                                 <svg class="w-6 h-6 text-primary mr-4 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                 <div>
-                                    <strong class="block text-lg text-gray-900 mb-1">OpenCom Flagship Store</strong>
-                                    Jl. Braga No. 123, Pusat Kota<br>Bandung, Jawa Barat 40111
+                                    <strong class="block text-lg text-gray-900 mb-1">{{$namaToko}}</strong>
+                                    {{$alamat}}
                                 </div>
                             </li>
                             <!-- Jam Buka -->
@@ -390,14 +413,14 @@
     </main>
 
     <!-- FOOTER -->
-    <footer class="bg-white border-t border-gray-200 pt-12 pb-8 mt-auto">
+<footer class="bg-white border-t border-gray-200 pt-12 pb-8 mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 text-center md:text-left">
                 <!-- Branding -->
                 <div>
-                    <span class="text-2xl font-bold text-primary">OpenCom.</span>
+                    <span class="text-2xl font-bold text-primary">{{ $namaToko }}</span>
                     <p class="mt-4 text-gray-500 text-sm leading-relaxed">
-                       OpenCom adalah fondasi untuk membangun toko online sesuai kebutuhan Anda. Mulai dengan lebih mudah, kembangkan dengan bebas, dan wujudkan ide bisnis Anda.
+                       {{ $namaToko }} adalah fondasi untuk membangun toko online sesuai kebutuhan Anda. Mulai dengan lebih mudah, kembangkan dengan bebas, dan wujudkan ide bisnis Anda.
                     </p>
                 </div>
                 <!-- Quick Links -->

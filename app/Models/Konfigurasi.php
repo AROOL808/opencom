@@ -16,7 +16,6 @@ class Konfigurasi extends Model
         'warna_background',
         'alamat_logo',
         'alamat_font',
-        'besar_font',
         'updated_at',
         'alamat_toko',
         'nama_toko',

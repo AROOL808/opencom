@@ -16,6 +16,8 @@ class Pesanan extends Model
         'status_pesanan', //menunggu_pembayaran, diproses, dikirim, selesai, dibatalkan
         'order_another_id',
         'nomor_resi',
+        'order_hash',
+        'is_batched',
     ];
 
     public function item_pesanan()

@@ -100,6 +100,9 @@ class OrderController extends Controller
             'order_another_id' => $orderAnotherId, // Simpan ID Unik
         ]);
 
+        $blockchain = new \App\Services\BlockchainService();
+        $blockchain->hashOrder($pesanan);
+        
         foreach ($cartItems as $item) {
             ItemPesanan::create([
                 'order_id' => $pesanan->order_id,
