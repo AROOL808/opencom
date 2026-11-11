@@ -1,20 +1,73 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Models\Konfigurasi;
+
 use Illuminate\Http\Request;
+use App\Models\Konfigurasi;
+use App\Models\Hero; // Pastikan model Hero diimport
+use Illuminate\Support\Facades\Storage;
 
 class ConfigurationController extends Controller
 {
+    // 1. Tampilkan Halaman
     public function editToko()
     {
-        // Ambil baris pertama dari tabel konfigurasi. Jika kosong, buat default baru.
-        $konfigurasi = Konfigurasi::firstOrCreate(
-            [], // Kondisi pencarian (kosongkan agar mencari apapun yang pertama)
-            ['nama_toko' => 'OpenCom Store', 'alamat_toko' => ''] // Nilai default jika database masih kosong
-        );
+        $konfigurasi = Konfigurasi::first() ?? new Konfigurasi();
+        $heroes = Hero::orderBy('urutan', 'asc')->get(); // Ambil data hero urut dari terkecil
+        
+        return view('admin.dashboard.profile', compact('konfigurasi', 'heroes'));
+    }
 
-        return view('admin.dashboard.profile', compact('konfigurasi'));
+    // 2. Simpan Hero Baru
+    public function storeHero(Request $request)
+    {
+        $request->validate([
+            'title'         => 'required|string|max:255',
+            'description'   => 'nullable|string',
+            'cta'           => 'nullable|string|max:50',
+            'urutan'        => 'required|integer',
+            'redirect_link' => 'nullable|string',
+            'product_id'    => 'nullable|integer',
+            'foto_file'     => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // Hapus 'required'
+            'foto_url'      => 'nullable|url',
+        ]);
+
+        // Cek apakah user tidak mengupload file dan juga tidak mengisi URL
+        if (!$request->hasFile('foto_file') && empty($request->foto_url)) {
+            return back()->withErrors(['foto_file' => 'Anda harus mengupload gambar atau memasukkan URL gambar.'])->withInput();
+        }
+
+        // Ambil semua data request KECUALI foto_file dan foto_url (karena akan kita proses manual)
+        $data = $request->except(['foto_file', 'foto_url']);
+
+        // Logika Penyimpanan: Prioritaskan file upload, jika tidak ada gunakan URL
+        if ($request->hasFile('foto_file')) {
+            $file = $request->file('foto_file');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $file->storeAs('public/heroes', $filename); 
+            
+            $data['alamat_foto'] = $filename; // Simpan nama file ke db
+        } else {
+            $data['alamat_foto'] = $request->foto_url; // Simpan URL ke db
+        }
+
+        Hero::create($data);
+
+        return back()->with('success', 'Banner Hero berhasil ditambahkan!');
+    }
+    // 3. Hapus Hero
+    public function destroyHero($id)
+    {
+        $hero = Hero::findOrFail($id);
+        
+        // Hapus file gambar dari storage jika ada
+        if ($hero->alamat_foto) {
+            Storage::delete('public/heroes/' . $hero->alamat_foto);
+        }
+        
+        $hero->delete();
+
+        return back()->with('success', 'Banner Hero berhasil dihapus!');
     }
 public function updateToko(Request $request)
     {

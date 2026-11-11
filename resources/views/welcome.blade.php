@@ -50,142 +50,187 @@
 <body class="antialiased bg-customBg text-customText font-sans flex flex-col min-h-screen">
 
     <!-- Terapkan Warna Navbar Dinamis pada Header -->
-    <header class="bg-customNav shadow-sm sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                
-                <!-- Logo Dinamis -->
-                <div class="flex-shrink-0 flex items-center cursor-pointer">
-                    <a href="{{ route('home') }}">
-                        @if($konfig && $konfig->alamat_logo)
+     <header class="bg-white w-full border-b border-gray-100 shadow-sm mb-4">
+        <!-- Bagian Utama Header (Logo, Pencarian, Aksi) -->
+        <div class="container mx-auto px-4 py-4 flex items-center justify-between gap-6">
+            
+            <!-- Logo / Nama Toko -->
+            <a class="flex items-center gap-2 text-2xl font-black text-gray-900 shrink-0" href="{{ route('home') }}" title="{{ $namaToko }}">
+                @if($konfig && $konfig->alamat_logo)
                             <!-- Menampilkan Gambar Logo jika URL diisi -->
-                            <img src="{{ $konfig->alamat_logo }}" alt="{{ $namaToko }}" class="h-8 w-auto object-contain">
-                        @else
-                            <!-- Fallback Teks jika Logo kosong -->
-                            <span class="text-2xl font-bold text-primary tracking-tight">{{ $namaToko }}</span>
-                        @endif
-                    </a>
+                    <img src="{{ $konfig->alamat_logo }}" alt="{{ $namaToko }}" class="h-8 w-auto object-contain">
+                @else
+                    <!-- Fallback Teks jika Logo kosong -->
+                    <span class="text-2xl font-bold text-primary tracking-tight">{{ $namaToko }}</span>
+                @endif
+            </a>
+
+            <!-- Form Pencarian -->
+            <div class="flex-1 max-w-2xl relative" data-store-search data-endpoint="{{ route('search.suggestions') }}">
+                <form action="{{ route('search') }}" method="GET" role="search" class="flex items-stretch w-full border border-[#ed6756] rounded-xl overflow-hidden bg-white" data-search-form>
+                    <label for="store-search-input" class="sr-only">Cari produk di toko ini</label>
+                    
+                    <div class="flex items-center justify-center pl-4 pr-2 text-slate-400">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+                    </div>
+                    
+                    <input id="store-search-input" type="search" name="q" value="{{ $query ?? '' }}" placeholder="Cari produk di toko ini..." maxlength="{{ config('search.max_query_length', 100) }}" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="store-search-list" data-search-input
+                        class="flex-1 py-2.5 px-1 text-sm text-gray-700 placeholder-slate-400 bg-transparent focus:outline-none focus:ring-0 appearance-none">
+                    
+                    @if(isset($searchParameters))
+                        @foreach($searchParameters as $key => $value)
+                            <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                        @endforeach
+                    @endif
+                    
+                    <button type="button" class="px-3 text-gray-400 hover:text-gray-600 text-xl font-light focus:outline-none hidden" aria-label="Hapus pencarian" data-search-clear>×</button>
+                    
+                    <button type="submit" class="bg-[#ed6756] hover:bg-[#d65b4c] px-6 flex items-center justify-center transition-colors focus:outline-none" aria-label="Cari produk">
+                        <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>
+                    </button>
+                </form>
+
+                <!-- Panel Saran Pencarian -->
+                <div class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg hidden" data-search-panel>
+                    <p class="px-4 py-2 text-sm text-gray-500" data-search-message></p>
+                    <div id="store-search-list" role="listbox" aria-label="Saran pencarian dan produk" class="max-h-64 overflow-y-auto" data-search-list></div>
                 </div>
-                <!-- Nav Menu (Desktop) -->
-                <nav class="hidden md:flex space-x-8">
-                    <a href="{{ route('home') }}" class="text-gray-900 font-medium hover:text-primary transition">Beranda</a>
-                    <a href="#kategori" class="text-gray-500 hover:text-gray-900 transition">Kategori</a>
-                    <a href="#populer" class="text-gray-500 hover:text-gray-900 transition">Populer</a>
-                    <a href="#produk" class="text-gray-500 hover:text-gray-900 transition">Produk</a>
-                </nav>
-                <!-- Cart & Login Button -->
-                <div class="flex items-center space-x-4">
-                    <a href="{{ route('cart.index') }}" class="text-gray-500 hover:text-gray-900 transition relative">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                        @if(isset($cartCount) && $cartCount > 0)
-                            <span class="absolute -top-1 -right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">{{ $cartCount }}</span>
-                        @endif
-                    </a>
+                <span class="sr-only" role="status" aria-live="polite" aria-atomic="true" data-search-status></span>
+            </div>
 
-                    @if(session('user_logged_in'))
-                    <!-- Area Dropdown Akun -->
-                    <div class="relative">
-                        <button onclick="toggleUserDropdown()" type="button" class="flex items-center focus:outline-none">
-                            <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg uppercase shadow-sm border border-indigo-200 hover:opacity-90 transition">
-                                {{ strtoupper(substr(session('username'), 0, 1)) }}
-                            </div>
-                        </button>
+            <!-- Aksi Header (Keranjang & Akun/Auth) -->
+            <div class="flex items-center gap-5 shrink-0">
+                <!-- Keranjang -->
+                <a class="relative p-1 text-gray-700 hover:text-gray-900 transition-colors" href="{{ route('cart.index') }}" aria-label="Keranjang, {{ $cartItems ?? 0 }} barang">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 7h14l1 14H4L5 7Z"/><path d="M8 9V6a4 4 0 0 1 8 0v3"/></svg>
+                    @if(isset($cartItems) && $cartItems > 0)
+                        <span class="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-[10px] font-bold text-white bg-red-500 rounded-full border-2 border-white">
+                            {{ $cartItems > 99 ? '99+' : $cartItems }}
+                        </span>
+                    @endif
+                </a>
 
-                        <!-- Menu Dropdown -->
-                        <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
-                            <div class="px-4 py-2 border-b border-gray-100">
-                                <p class="text-xs text-gray-400">Masuk sebagai</p>
-                                <p class="text-sm font-semibold text-gray-800 truncate">{{ session('username') }}</p>
-                            </div>
-                            
-                            <!-- OPSI BARU: Pesanan Saya -->
-                            <a href="{{ route('orders.index') }}" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center">
-                                <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 11h14l1 12H4L5 11z"></path></svg>
-                                Pesanan Saya
-                            </a>
-
-                            <!-- Logout -->
-                            <form action="{{ route('logout') }}" method="POST">
+                <!-- Akun atau Autentikasi -->
+                @if(session('user_logged_in'))
+                    <details class="relative group" data-store-account>
+                        <summary class="flex items-center gap-2 cursor-pointer list-none focus:outline-none [&::-webkit-details-marker]:hidden" aria-label="Menu akun {{ session('username') }}">
+                            <span class="flex items-center justify-center w-8 h-8 text-sm font-bold text-[#ed6756] bg-red-50 rounded-full border border-red-100">
+                                {{ mb_strtoupper(mb_substr(session('username'), 0, 1)) }}
+                            </span>
+                            <span class="text-sm font-medium text-gray-700 group-hover:text-gray-900 hidden sm:block">Akun</span>
+                        </summary>
+                        <div class="absolute right-0 w-48 mt-2 py-2 bg-white border border-gray-100 rounded-lg shadow-xl z-50">
+                            <span class="block px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">{{ session('username') }}</span>
+                            <a href="{{ route('orders.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Pesanan saya</a>
+                            <form action="{{ route('logout') }}" method="POST" class="w-full">
                                 @csrf
-                                <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition flex items-center">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                                    Keluar
-                                </button>
+                                <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50">Keluar</button>
                             </form>
                         </div>
+                    </details>
+                @else
+                    <div class="flex items-center gap-3">
+                        <a href="{{ route('login') }}" class="px-5 py-2 text-sm font-medium text-primary border border-primary rounded-lg hover:shadow-sm hover:shadow-primary">Masuk</a>
+                        <a href="{{ route('register') }}" class="px-5 py-2 text-sm font-medium text-white bg-primary border border-primary rounded-lg hover:shadow-sm hover:shadow-primary ">Daftar</a>
                     </div>
-                    @else
-                    <div class="hidden md:flex items-center space-x-3">
-                        <a href="{{ route('login') }}" class="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition">Masuk</a>
-                        <a href="{{ route('register') }}" class="text-black px-4 py-2 rounded-lg font-medium hover:bg-black hover:text-white border-2 border-black transition">Daftar</a>
-                    </div>
-                    @endif
-                </div>
+                @endif
             </div>
         </div>
+
+        <!-- Navigasi (Tengah, Tanpa Garis Bawah Oranye) -->
+        <nav class="container mx-auto px-4 flex justify-center items-center gap-8 py-3" aria-label="Navigasi toko">
+            <a href="{{ route('home') }}" class="text-sm font-semibold text-gray-900 hover:text-primary transition-colors" @if(request()->routeIs('home')) aria-current="page" @endif>Beranda</a>
+            <a href="{{ route('home') }}#produk" class="text-sm font-medium text-gray-500 hover:text-primary transition-colors">Semua produk</a>
+            <a href="{{ route('home') }}#kategori" class="text-sm font-medium text-gray-500 hover:text-primary transition-colors">Kategori</a>
+            <a href="{{ route('home') }}#populer" class="text-sm font-medium text-gray-500 hover:text-primary transition-colors">Populer</a>
+        </nav>
     </header>
 
     <!-- MAIN CONTENT -->
     <main class="flex-grow">
-        @include('search.form')
-        <!--  HERO SECTION DENGAN SLIDER (Menggunakan Alpine.js) -->
+        <!--  HERO SECTION -->
         <section 
             x-data="{ 
                 activeSlide: 0, 
-                slides: {{ json_encode($heroSlides) }},
-                next() { this.activeSlide = this.activeSlide === this.slides.length - 1 ? 0 : this.activeSlide + 1 },
-                prev() { this.activeSlide = this.activeSlide === 0 ? this.slides.length - 1 : this.activeSlide - 1 }
+                totalSlides: {{ $heroes->count() }},
+                next() { this.activeSlide = this.activeSlide === this.totalSlides - 1 ? 0 : this.activeSlide + 1 },
+                prev() { this.activeSlide = this.activeSlide === 0 ? this.totalSlides - 1 : this.activeSlide - 1 }
             }" 
             x-init="setInterval(() => next(), 5000)" 
             class="relative bg-secondary text-white overflow-hidden"
         >
             <div class="relative h-[500px] md:h-[600px] w-full">
-                <!-- Slides Loop -->
-                <template x-for="(slide, index) in slides" :key="index">
-                    <div 
-                        x-show="activeSlide === index"
-                        x-transition:enter="transition ease-out duration-700"
-                        x-transition:enter-start="opacity-0 translate-x-8"
-                        x-transition:enter-end="opacity-100 translate-x-0"
-                        x-transition:leave="transition ease-in duration-500 absolute top-0 left-0 w-full"
-                        x-transition:leave-start="opacity-100"
-                        x-transition:leave-end="opacity-0 -translate-x-8"
-                        class="absolute inset-0 flex flex-col md:flex-row items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 z-10"
-                    >
-                        <!-- Teks Info -->
-                        <div class="md:w-1/2 space-y-6 text-center md:text-left z-20">
-                            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
-                                <span x-text="slide.title.split(' ')[0]" class="text-primary"></span> 
-                                <span x-text="slide.title.substring(slide.title.indexOf(' ') + 1)"></span>
-                            </h1>
-                            <p class="text-lg text-white max-w-md mx-auto md:mx-0" x-text="slide.desc"></p>
-                            <div class="pt-4">
-                                <a href="#produk" class="inline-block bg-primary hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transition duration-300" x-text="slide.cta"></a>
+                
+                @if($heroes->count() > 0)
+                    <!-- Slides Loop via Blade -->
+                    @foreach($heroes as $index => $hero)
+                        @php
+                            // Cek format gambar (URL eksternal vs File storage)
+                            $isUrl = \Illuminate\Support\Str::startsWith($hero->alamat_foto, ['http://', 'https://']);
+                            $imgSource = $isUrl ? $hero->alamat_foto : asset('storage/heroes/' . $hero->alamat_foto);
+                            
+                            // Logika pemisah kata pertama agar berwarna beda (Primary Color)
+                            $titleParts = explode(' ', $hero->title, 2);
+                            $firstWord = $titleParts[0];
+                            $restOfTitle = $titleParts[1] ?? '';
+                        @endphp
+
+                        <div 
+                            x-show="activeSlide === {{ $index }}"
+                            x-transition:enter="transition ease-out duration-700"
+                            x-transition:enter-start="opacity-0 translate-x-8"
+                            x-transition:enter-end="opacity-100 translate-x-0"
+                            x-transition:leave="transition ease-in duration-500 absolute top-0 left-0 w-full"
+                            x-transition:leave-start="opacity-100"
+                            x-transition:leave-end="opacity-0 -translate-x-8"
+                            style="display: none;" 
+                            class="absolute inset-0 flex flex-col md:flex-row items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 z-10"
+                        >
+                            <!-- Teks Info -->
+                            <div class="md:w-1/2 space-y-6 text-center md:text-left z-20">
+                                <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight">
+                                    <span class="text-primary">{{ $firstWord }}</span> 
+                                    <span>{{ $restOfTitle }}</span>
+                                </h1>
+                                <p class="text-lg text-gray-300 max-w-md mx-auto md:mx-0">
+                                    {{ $hero->description }}
+                                </p>
+                                <div class="pt-4">
+                                    <a href="{{ $hero->redirect_link ?? '#produk' }}" class="inline-block bg-primary hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transition duration-300">
+                                        {{ $hero->cta ?? 'Belanja Sekarang' }}
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <!-- Gambar -->
+                            <div class="md:w-1/2 absolute md:relative inset-0 md:inset-auto mt-12 md:mt-0 opacity-20 md:opacity-90 z-10 flex justify-end">
+                                <img src="{{ $imgSource }}" alt="{{ $hero->title }}" class="rounded-2xl shadow-2xl object-cover h-full md:h-96 w-full md:w-5/6">
                             </div>
                         </div>
-                        <!-- Gambar -->
-                        <div class="md:w-1/2 absolute md:relative inset-0 md:inset-auto mt-12 md:mt-0 opacity-20 md:opacity-90 z-10 flex justify-end">
-                            <img :src="slide.image" :alt="slide.title" class="rounded-2xl shadow-2xl object-cover h-full md:h-96 w-full md:w-5/6">
-                        </div>
+                    @endforeach
+
+                    <!-- Slider Navigation Dots -->
+                    <div class="absolute bottom-8 left-0 right-0 flex justify-center space-x-2 z-30">
+                        @foreach($heroes as $index => $hero)
+                            <button 
+                                @click="activeSlide = {{ $index }}" 
+                                :class="{'bg-primary w-8': activeSlide === {{ $index }}, 'bg-gray-400 w-3': activeSlide !== {{ $index }}}"
+                                class="h-3 rounded-full transition-all duration-300"
+                                aria-label="Go to slide {{ $index + 1 }}"
+                            ></button>
+                        @endforeach
                     </div>
-                </template>
+
+                @else
+                    <!-- Fallback Jika Database Hero Kosong -->
+                    <div class="absolute inset-0 flex items-center justify-center text-gray-400">
+                        <p>Belum ada banner yang dikonfigurasi.</p>
+                    </div>
+                @endif
                 
                 <!-- Background Decoration -->
-                <div class="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-primary rounded-full blur-3xl opacity-20"></div>
+                <div class="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-primary rounded-full blur-3xl opacity-20 pointer-events-none"></div>
 
-                <!-- Slider Navigation Dots -->
-                <div class="absolute bottom-8 left-0 right-0 flex justify-center space-x-2 z-30">
-                    <template x-for="(slide, index) in slides" :key="index">
-                        <button 
-                            @click="activeSlide = index" 
-                            :class="{'bg-primary w-8': activeSlide === index, 'bg-gray-400 w-3': activeSlide !== index}"
-                            class="h-3 rounded-full transition-all duration-300"
-                            aria-label="Go to slide"
-                        ></button>
-                    </template>
-                </div>
             </div>
         </section>
 
@@ -270,7 +315,7 @@
                                 <form action="{{ route('cart.add', $product->product_id) }}" method="POST" class="mt-2">
                                     @csrf
                                     <button type="button" 
-                                        onclick="openCartModal('{{ $product->product_id }}', '{{ addslashes($product->nama_produk) }}')" 
+                                        onclick="openCartModal('{{ $product->product_id }}', '{{ addslashes($product->nama_produk) }}', '{{$product->berat}}', '{{$product->harga}}')" 
                                         class="mt-2 w-full bg-gray-50 hover:bg-primary hover:text-white border border-gray-200 text-gray-700 font-medium py-2 rounded-lg transition duration-200">
                                         Tambah
                                     </button>
@@ -296,9 +341,11 @@
                         
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-8 pb-4 border-b border-gray-100">
                             <h3 class="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">{{ $category->nama_kategori }}</h3>
-                            <a href="#" class="group flex items-center text-primary font-medium hover:text-indigo-800 transition">
+                            <a href="{{ route('search', ['category' => $category->category_id]) }}" class="group flex items-center text-primary font-medium hover:text-indigo-800 transition">
                                 Lihat Semua 
-                                <svg class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                <svg class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                </svg>
                             </a>
                         </div>
 
@@ -323,7 +370,7 @@
                                         <form action="{{ route('cart.add', $product->product_id) }}" method="POST" class="mt-2">
                                             @csrf
                                             <button type="button" 
-                                                onclick="openCartModal('{{ $product->product_id }}', '{{ addslashes($product->nama_produk) }}')" 
+                                                onclick="openCartModal('{{ $product->product_id }}', '{{ addslashes($product->nama_produk) }}', '{{$product->berat}}', '{{$product->harga}}')" 
                                                 class="mt-2 w-full bg-gray-50 hover:bg-primary hover:text-white border border-gray-200 text-gray-700 font-medium py-2 rounded-lg transition duration-200">
                                                 Tambah
                                             </button>
@@ -462,6 +509,9 @@
             
             <!-- Nama Produk Terpilih -->
             <p id="modalProductName" class="text-gray-600 text-sm mb-5 font-medium truncate"></p>
+            <p id="modalProductPrice" class="text-gray-600 text-sm mb-5 font-medium truncate"></p>
+            <p id="modalProductWeight" class="text-gray-600 text-sm mb-5 font-medium truncate"></p>
+
             
             <!-- Form Pengisian Jumlah -->
             <form id="formCartModal" method="POST" action="">
@@ -496,9 +546,11 @@
                 dropdown.classList.add('hidden');
             }
         });
-        function openCartModal(productId, productName) {
-            // 1. Tampilkan nama produk ke dalam modal
+        function openCartModal(productId, productName, productWeight, productPrice) {
+            // 1. Tampilkan nama produk dan berat ke dalam modal
             document.getElementById('modalProductName').innerText = productName;
+            document.getElementById('modalProductWeight').innerText = 'Berat : ' + productWeight + 'g';
+            document.getElementById('modalProductPrice').innerText = 'Rp.' + new Intl.NumberFormat('de-DE').format(productPrice);
             
             // 2. Buat URL dinamis sesuai ID produk dan setel ke action form
             let baseUrl = "{{ url('/cart/add') }}";

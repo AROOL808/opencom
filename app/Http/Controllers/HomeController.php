@@ -8,6 +8,7 @@ use App\Models\Pengguna;
 use App\Models\Keranjang;
 use App\Models\ItemKeranjang;
 use Illuminate\Http\Request;
+use App\Models\Hero;
 
 class HomeController extends Controller
 {
@@ -53,7 +54,9 @@ class HomeController extends Controller
             }
         }
 
-        return view('welcome', compact('heroSlides','categories', 'popularProducts', 'productsByCategory', 'cartCount'));
+        $heroes = Hero::orderBy('urutan', 'asc')->get();
+
+        return view('welcome', compact('heroes', 'heroSlides','categories', 'popularProducts', 'productsByCategory', 'cartCount'));
     }
 
     //  FUNGSI MENAMBAH KE KERANJANG

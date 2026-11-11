@@ -12,7 +12,8 @@ use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\AdminBlockchainController;
-use \App\Http\Controllers\SearchController;
+use App\Http\Controllers\SearchSuggestionsController;
+use App\Http\Controllers\SearchController;
 
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -46,9 +47,12 @@ Route::prefix('admin/dashboard')
         });
 
         // Profil Toko (Route: /admin/dashboard/profile | Name: admin.dashboard.profile)
+        // Profil Toko
         Route::get('/profile', [ConfigurationController::class, 'editToko'])->name('profile');
         Route::put('/profile/update', [ConfigurationController::class, 'updateToko'])->name('profile.update');
 
+        Route::post('/hero/store', [ConfigurationController::class, 'storeHero'])->name('hero.store');
+        Route::delete('/hero/{id}/destroy', [ConfigurationController::class, 'destroyHero'])->name('hero.destroy');
         // Kustomasi Toko (Route: /admin/dashboard/customization)
         Route::get('/customization', function () {
             return view('admin.dashboard.customization'); // Sesuaikan dengan nama view Anda
@@ -113,3 +117,4 @@ Route::post('/checkout', [OrderController::class, 'processCheckout'])->name('che
 Route::get('/orders/{order_id}/payment', [OrderController::class, 'payNow'])->name('orders.payment');
 
 Route::get('/search', SearchController::class)->middleware('throttle:60,1')->name('search');
+Route::get('/search/suggestions', SearchSuggestionsController::class)->middleware('throttle:search-suggestions')->name('search.suggestions');

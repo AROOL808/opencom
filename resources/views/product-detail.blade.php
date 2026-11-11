@@ -103,6 +103,10 @@
 
                     <!-- Deskripsi Produk -->
                     <div class="mb-8">
+                        
+                        <p class="text-gray-600 leading-relaxed text-sm">
+                            Berat : {{ $product->berat ?? '0' }}g
+                        </p>
                         <h3 class="text-lg font-bold text-gray-900 mb-2">Deskripsi Produk</h3>
                         <p class="text-gray-600 leading-relaxed text-sm">
                             {{ $product->deskripsi ?: 'Tidak ada deskripsi untuk produk ini.' }}

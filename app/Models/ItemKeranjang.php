@@ -13,6 +13,7 @@ class ItemKeranjang extends Model
         'cart_id',
         'product_id',
         'jumlah',
+        
 
     ];
 

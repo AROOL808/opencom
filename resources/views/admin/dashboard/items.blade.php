@@ -83,6 +83,7 @@
                         <th class="p-3 font-medium">Kategori</th>
                         <th class="p-3 font-medium">Harga</th>
                         <th class="p-3 font-medium">Stok</th>
+                        <th class="p-3 font-medium">Berat</th>
                         <th class="p-3 font-medium text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -96,6 +97,7 @@
                         <td class="p-3 text-gray-600">{{ $prod->category->nama_kategori ?? '-' }}</td>
                         <td class="p-3 text-gray-600">Rp {{ number_format($prod->harga, 0, ',', '.') }}</td>
                         <td class="p-3 text-gray-600">{{ $prod->stok }}</td>
+                        <td class="p-3 text-gray-600">{{ $prod->berat }}g</td>
                         <td class="p-3 text-right">
                             <!-- Tombol Edit -->
                             <button type="button" 
@@ -216,6 +218,10 @@
                     <input type="number" name="stok" required class="w-full border px-3 py-2 rounded-lg outline-none focus:border-primary">
                 </div>
             </div>
+            <div>
+                <label class="block text-sm text-gray-700 mb-1">Berat (gram)</label>
+                <input type="number" name="berat" id="berat" required class="w-full border px-3 py-2 rounded-lg outline-none focus:border-primary">
+            </div>
             
             <div>
                 <label class="block text-sm text-gray-700 mb-1">Upload Foto Baru (Otomatis WebP 1:1)</label>
@@ -264,7 +270,10 @@
                     <input type="number" name="stok" id="edit_stok" required class="w-full border px-3 py-2 rounded-lg outline-none focus:border-primary">
                 </div>
             </div>
-            
+            <div>
+                <label class="block text-sm text-gray-700 mb-1">Berat (gram)</label>
+                <input type="number" name="berat" id="edit_berat" required class="w-full border px-3 py-2 rounded-lg outline-none focus:border-primary">
+            </div>
             <div>
                 <label class="block text-sm text-gray-700 mb-1">Update Foto <span class="text-gray-400 text-xs">(Kosongkan jika tidak ingin mengubah foto)</span></label>
                 <!-- Atribut "required" dihilangkan pada Edit form -->
