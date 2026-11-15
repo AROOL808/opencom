@@ -137,5 +137,13 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Navigasi Paginasi -->
+    @if($orders->hasPages())
+        <div class="mt-6 pt-4 border-t border-gray-100">
+            {{ $orders->links() }}
+        </div>
+    @endif
 </div>
 @endsection
+    </div>

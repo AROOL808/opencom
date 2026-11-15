@@ -1,3 +1,16 @@
+@php
+    // Ambil data konfigurasi dari database
+    $konfig = \App\Models\Konfigurasi::first();
+    
+    // Set fallback default jika kosong
+    $fontName = $konfig->alamat_font ?? 'Inter';
+    $primaryColor = $konfig->warna_item ?? '#4F46E5';
+    $navColor = $konfig->warna_navigator ?? '#ffffff';
+    $bgColor = $konfig->warna_background ?? '#f9fafb';
+    $textColor = $konfig->warna_font ?? '#1f2937';
+    $namaToko = $konfig->nama_toko ?? 'OpenCom.';
+    $alamat = $konfig->alamat_toko ?? '-';
+@endphp
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -6,18 +19,99 @@
     <title>Keranjang Belanja - OpenCom</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = { theme: { extend: { colors: { primary: '#4F46E5', secondary: '#111827' } } } }
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"{{ $fontName }}"', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '{{ $primaryColor }}',
+                        customBg: '{{ $bgColor }}',
+                        customNav: '{{ $navColor }}',
+                        customText: '{{ $textColor }}'
+                    }
+                }
+            }
+        }
     </script>
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans antialiased flex flex-col min-h-screen">
 
     <!-- Header / Navbar Sederhana -->
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <a href="{{ route('home') }}" class="text-2xl font-bold text-primary">OpenCom.</a>
-            <a href="{{ route('home') }}" class="text-sm font-medium text-gray-500 hover:text-gray-900">Kembali Berbelanja</a>
-        </div>
-    </header>
+<header class="bg-customNav shadow-sm sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    
+                    <!-- Logo Dinamis -->
+                    <div class="flex-shrink-0 flex items-center cursor-pointer">
+                        <a href="{{ route('home') }}">
+                            @if($konfig && $konfig->alamat_logo)
+                                <!-- Menampilkan Gambar Logo jika URL diisi -->
+                                <img src="{{ $konfig->alamat_logo }}" alt="{{ $namaToko }}" class="h-8 w-auto object-contain">
+                            @else
+                                <!-- Fallback Teks jika Logo kosong -->
+                                <span class="text-2xl font-bold text-primary tracking-tight">{{ $namaToko }}</span>
+                            @endif
+                        </a>
+                    </div>
+                    <!-- Nav Menu (Desktop) -->
+                    <nav class="hidden md:flex space-x-8">
+                        <a href="{{ route('home') }}" class="text-gray-900 font-medium hover:text-primary transition">Beranda</a>
+                    </nav>
+                    <!-- Cart & Login Button -->
+                    <div class="flex items-center space-x-4">
+                        <a href="{{ route('cart.index') }}" class="text-gray-500 hover:text-gray-900 transition relative">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                            @if(isset($cartCount) && $cartCount > 0)
+                                <span class="absolute -top-1 -right-2 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">{{ $cartCount }}</span>
+                            @endif
+                        </a>
+
+                        @if(session('user_logged_in'))
+                        <!-- Area Dropdown Akun -->
+                        <div class="relative">
+                            <button onclick="toggleUserDropdown()" type="button" class="flex items-center focus:outline-none">
+                                <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg uppercase shadow-sm border border-indigo-200 hover:opacity-90 transition">
+                                    {{ strtoupper(substr(session('username'), 0, 1)) }}
+                                </div>
+                            </button>
+
+                            <!-- Menu Dropdown -->
+                            <div id="userDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg py-1 z-50">
+                                <div class="px-4 py-2 border-b border-gray-100">
+                                    <p class="text-xs text-gray-400">Masuk sebagai</p>
+                                    <p class="text-sm font-semibold text-gray-800 truncate">{{ session('username') }}</p>
+                                </div>
+                                
+                                <!-- OPSI BARU: Pesanan Saya -->
+                                <a href="{{ route('orders.index') }}" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 11h14l1 12H4L5 11z"></path></svg>
+                                    Pesanan Saya
+                                </a>
+
+                                <!-- Logout -->
+                                <form action="{{ route('logout') }}" method="POST">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition flex items-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                                        Keluar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        @else
+                        <div class="hidden md:flex items-center space-x-3">
+                            <a href="{{ route('login') }}" class="bg-primary text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition">Masuk</a>
+                            <a href="{{ route('register') }}" class="text-black px-4 py-2 rounded-lg font-medium hover:bg-black hover:text-white border-2 border-black transition">Daftar</a>
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </header>
 
     <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
         <h1 class="text-2xl font-bold mb-8">Keranjang Belanja Anda</h1>
@@ -132,7 +226,9 @@
                                 <span class="text-base font-bold text-gray-900">Total Tagihan</span>
                                 <span class="text-xl font-bold text-primary" id="displayTotal">Rp {{ number_format($total, 0, ',', '.') }}</span>
                             </div>
-
+                            <div>
+                                <span class="text-xs text-gray-500">*Pembayaran dilakukan melalui bank transfer ke bank {{env('PAYMENT_BANK')}}</span>
+                            </div>
                             <button type="submit" id="btnCheckout" class="w-full block text-center bg-primary hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition duration-300 shadow-md opacity-50 cursor-not-allowed" disabled>
                                 Lengkapi Pengiriman
                             </button>

@@ -53,6 +53,7 @@ Route::prefix('admin/dashboard')
 
         Route::post('/hero/store', [ConfigurationController::class, 'storeHero'])->name('hero.store');
         Route::delete('/hero/{id}/destroy', [ConfigurationController::class, 'destroyHero'])->name('hero.destroy');
+        Route::put('/admin/dashboard/hero/{id}', [ConfigurationController::class, 'update'])->name('hero.update');
         // Kustomasi Toko (Route: /admin/dashboard/customization)
         Route::get('/customization', function () {
             return view('admin.dashboard.customization'); // Sesuaikan dengan nama view Anda

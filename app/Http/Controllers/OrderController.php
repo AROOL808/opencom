@@ -11,6 +11,7 @@ use App\Models\Keranjang;
 use App\Models\ItemKeranjang;
 use App\Models\Pengguna;
 use App\Services\RajaOngkirService;
+use Illuminate\Support\Facades\Http;
 
 class OrderController extends Controller
 {
@@ -39,27 +40,97 @@ class OrderController extends Controller
     }
 
     // Lacak Resi via RajaOngkir
-    public function track($order_id)
+    public function track(Request $request, $order_id)
     {
-        $order = Pesanan::findOrFail($order_id);
+        $order = Pesanan::with('pengguna')->findOrFail($order_id);
         
         if (!$order->nomor_resi) {
+            if ($request->wantsJson()) {
+                return response()->json(['status' => 'error', 'message' => 'Nomor resi belum tersedia.'], 400);
+            }
             return back()->with('error', 'Nomor resi belum tersedia.');
         }
 
-        $trackingData = $this->rajaOngkir->trackWaybill($order->nomor_resi, 'jne');
+        // Ambil kurir dari kolom pesanan (fallback ke 'jne')
+        $kurir = strtolower(trim($order->kurir ?? ($order->pengiriman->kurir ?? 'jne')));
+
+        // Ambil 5 digit terakhir dari nomor ponsel pemesan
+        $rawPhone = $order->pengguna->no_telepon ?? '';
+        $cleanPhone = preg_replace('/\D/', '', $rawPhone);
+        $lastPhoneNumber = substr($cleanPhone, -5);
+
+        $params = [
+            'awb'     => trim($order->nomor_resi),
+            'courier' => $kurir,
+        ];
+
+        if (!empty($lastPhoneNumber)) {
+            $params['last_phone_number'] = $lastPhoneNumber;
+        }
+
+        $url = 'https://rajaongkir.komerce.id/api/v1/track/waybill?' . http_build_query($params);
+
+        // Endpoint track/waybill Komerce V1 menggunakan method POST dengan query parameter
+        $response = Http::withHeaders([
+            'key'    => env('RAJAONGKIR_API_KEY'),
+            'Accept' => 'application/json',
+        ])->post($url);
+
+        // Fallback ke GET apabila server mengembalikan 405 Method Not Allowed
+        if ($response->status() === 405) {
+            $response = Http::withHeaders([
+                'key'    => env('RAJAONGKIR_API_KEY'),
+                'Accept' => 'application/json',
+            ])->get($url);
+        }
+
+        $trackingData = $response->json();
+
+        // Tangani jika API Komerce mengembalikan error (misal resi tidak valid / API key salah)
+        if ($response->failed()) {
+            $errorMessage = $trackingData['meta']['message'] ?? 'Gagal mengambil data pelacakan dari kurir.';
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'status'   => 'error',
+                    'message'  => $errorMessage,
+                    'tracking' => $trackingData,
+                ], $response->status());
+            }
+
+            return back()->with('error', $errorMessage);
+        }
+
+        // Jika dipanggil via AJAX dari halaman orders.index
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status'   => 'success',
+                'tracking' => $trackingData,
+            ]);
+        }
 
         return view('orders.track', compact('order', 'trackingData'));
     }
 
     public function processCheckout(Request $request)
     {
-        // $request->layanan_ongkir nilainya misal: "REG|45000"
-        $request->validate(['layanan_ongkir' => 'required']);
+        $request->validate([
+            'layanan_ongkir' => 'required',
+            'kurir' => 'nullable|string|max:50',
+        ]);
         
         $ongkirPilihan = explode('|', $request->layanan_ongkir);
-        $namaLayanan = $ongkirPilihan[0];
-        $hargaOngkir = (int) $ongkirPilihan[1];
+
+        // Mendukung format "jne|REG|45000" maupun "REG|45000" dengan input terpisah name="kurir"
+        if (count($ongkirPilihan) === 3) {
+            $kurir = strtolower(trim($ongkirPilihan[0]));
+            $namaLayanan = $ongkirPilihan[1];
+            $hargaOngkir = (int) $ongkirPilihan[2];
+        } else {
+            $kurir = strtolower(trim($request->input('kurir', 'jne')));
+            $namaLayanan = $ongkirPilihan[0];
+            $hargaOngkir = (int) ($ongkirPilihan[1] ?? 0);
+        }
 
         $pengguna = Pengguna::where('username', session('username'))->firstOrFail();
         $keranjang = Keranjang::where('user_id', $pengguna->user_id)->first();
@@ -71,7 +142,6 @@ class OrderController extends Controller
         foreach ($cartItems as $item) {
             $subtotal += ($item->product->harga * $item->jumlah);
             
-            // Format item belanja sesuai dokumentasi Komerce
             $formattedItems[] = [
                 'name' => substr($item->product->nama_produk, 0, 50),
                 'quantity' => (int) $item->jumlah,
@@ -79,25 +149,23 @@ class OrderController extends Controller
             ];
         }
         
-        // Masukkan ongkir sebagai bagian dari item Komerce agar Amount balance
         $formattedItems[] = [
-            'name' => 'Ongkos Kirim (' . $namaLayanan . ')',
+            'name' => 'Ongkos Kirim (' . strtoupper($kurir) . ' - ' . $namaLayanan . ')',
             'quantity' => 1,
             'price' => $hargaOngkir
         ];
 
         $grandTotal = $subtotal + $hargaOngkir;
-
-        // Generate ID Invoice Unik (Misal: INV-20261025-XYZ12)
         $orderAnotherId = 'INV-' . date('Ymd') . '-' . strtoupper(Str::random(5));
 
-        // 1. Simpan Pesanan ke Database
+        // 1. Simpan Pesanan beserta Kurir ke Database
         $pesanan = Pesanan::create([
             'user_id' => $pengguna->user_id,
             'tanggal_pesanan' => now(),
             'total_harga' => $grandTotal,
             'status_pesanan' => 'menunggu_pembayaran',
-            'order_another_id' => $orderAnotherId, // Simpan ID Unik
+            'order_another_id' => $orderAnotherId,
+            'kurir' => $kurir,
         ]);
 
         $blockchain = new \App\Services\BlockchainService();
@@ -135,20 +203,16 @@ class OrderController extends Controller
         );
 
         // 4. Handle Respons Komerce
-        // Berdasarkan standar Komerce Payment API, jika sukses mereka biasanya mengembalikan checkout_url
         if (isset($paymentResponse['data']['payment_url']) || isset($paymentResponse['data']['checkout_url'])) {
             $redirectUrl = $paymentResponse['data']['payment_url'] ?? $paymentResponse['data']['checkout_url'];
             return redirect($redirectUrl);
         }
         
-        // Jika Komerce hanya mengembalikan nomor Virtual Account mentah (tanpa UI link)
         if (isset($paymentResponse['data']['virtual_account_number'])) {
             return redirect()->route('orders.index')->with('success', 'Silakan transfer ke VA BCA: ' . $paymentResponse['data']['virtual_account_number']);
         }
 
-        // Jika terjadi error dari Komerce
-        // return redirect()->route('orders.index')->with('error', 'Gagal memuat Payment Gateway: ' . json_encode($paymentResponse));
-        dd('ERROR DARI KOMERCE CHECKOUT:', $paymentResponse);
+        dd('ERROR DARI KOMERCE CHECKOUT:', $grandTotal);
     }
     public function payNow($order_id)
     {
@@ -202,7 +266,7 @@ class OrderController extends Controller
             $customerData, 
             $formattedItems,
             'bank_transfer',  // Metode
-            'BCA'  // Bank
+            env('PAYMENT_BANK') // Bank
         );
 
         // 6. Redirect ke halaman Komerce

@@ -115,11 +115,19 @@
                             <div class="text-xs text-gray-500 mt-1">Tombol: {{ $hero->cta }}</div>
                         </td>
                         <td class="p-3">
-                            <form action="{{ route('admin.dashboard.hero.destroy', $hero->hero_item_id) }}" method="POST" onsubmit="return confirm('Hapus banner ini?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-500 hover:text-red-700 font-semibold px-2 py-1 bg-red-50 rounded">Hapus</button>
-                            </form>
+                            <div class="flex items-center space-x-2">
+                                <!-- Tombol Edit -->
+                                <button type="button" onclick="document.getElementById('modalEditHero{{ $hero->hero_item_id }}').classList.remove('hidden')" class="text-blue-500 hover:text-blue-700 font-semibold px-2 py-1 bg-blue-50 rounded transition">
+                                    Edit
+                                </button>
+                                
+                                <!-- Tombol Hapus -->
+                                <form action="{{ route('admin.dashboard.hero.destroy', $hero->hero_item_id) }}" method="POST" onsubmit="return confirm('Hapus banner ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-500 hover:text-red-700 font-semibold px-2 py-1 bg-red-50 rounded transition">Hapus</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     @empty
@@ -132,7 +140,72 @@
         </div>
     </div>
 </div>
+<!-- ================= MODAL EDIT HERO (Spesifik per Item) ================= -->
+<div id="modalEditHero{{ $hero->hero_item_id }}" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 transition-opacity">
+    <div class="bg-white p-6 rounded-2xl w-full max-w-lg shadow-xl transform transition-all relative max-h-[90vh] overflow-y-auto">
+        
+        <div class="flex justify-between items-center mb-4 border-b pb-2">
+            <h3 class="text-lg font-bold text-gray-900">Edit Hero Banner</h3>
+            <button type="button" onclick="document.getElementById('modalEditHero{{ $hero->hero_item_id }}').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <form action="{{ route('admin.dashboard.hero.update', $hero->hero_item_id) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+            @csrf
+            @method('PUT')
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Judul Banner (Title)</label>
+                <input type="text" name="title" value="{{ $hero->title }}" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-sm">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">Deskripsi Singkat</label>
+                <textarea name="description" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary text-sm">{{ $hero->description }}</textarea>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Teks Tombol (CTA)</label>
+                    <input type="text" name="cta" value="{{ $hero->cta }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Urutan Tampil</label>
+                    <input type="number" name="urutan" value="{{ $hero->urutan }}" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-primary text-sm">
+                </div>
+            </div>
 
+            <div class="grid grid-cols-1 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Link Redirect</label>
+                    <input type="text" name="redirect_link" value="{{ $hero->redirect_link }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-100 pt-4 mt-2">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Ganti File Gambar</label>
+                    <input type="file" name="foto_file" accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Atau Gunakan URL</label>
+                    <input type="url" name="foto_url" value="{{ Str::startsWith($hero->alamat_foto, ['http://', 'https://']) ? $hero->alamat_foto : '' }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                </div>
+                <div class="col-span-full">
+                    <p class="text-xs text-gray-500 italic">*Biarkan kosong jika tidak ingin mengubah gambar.</p>
+                </div>
+            </div>
+            
+            <div class="pt-4 border-t border-gray-100">
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow-md transition">
+                    Perbarui Banner
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- ================= END MODAL EDIT HERO ================= -->
 <!-- ================= MODAL TAMBAH HERO ================= -->
 <div id="modalAddHero" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 transition-opacity">
     <div class="bg-white p-6 rounded-2xl w-full max-w-lg shadow-xl transform transition-all relative max-h-[90vh] overflow-y-auto">

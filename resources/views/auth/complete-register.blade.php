@@ -1,3 +1,28 @@
+@php
+    // Ambil data konfigurasi dari database
+    $konfig = \App\Models\Konfigurasi::first();
+    
+    // Set fallback default jika kosong
+    $fontName = $konfig->alamat_font ?? 'Inter';
+    $primaryColor = $konfig->warna_item ?? '#4F46E5';
+    $navColor = $konfig->warna_navigator ?? '#ffffff';
+    $bgColor = $konfig->warna_background ?? '#f9fafb';
+    $textColor = $konfig->warna_font ?? '#1f2937';
+    $namaToko = $konfig->nama_toko ?? 'OpenCom.';
+    $alamat = $konfig->alamat_toko ?? '-';
+@endphp@php
+    // Ambil data konfigurasi dari database
+    $konfig = \App\Models\Konfigurasi::first();
+    
+    // Set fallback default jika kosong
+    $fontName = $konfig->alamat_font ?? 'Inter';
+    $primaryColor = $konfig->warna_item ?? '#4F46E5';
+    $navColor = $konfig->warna_navigator ?? '#ffffff';
+    $bgColor = $konfig->warna_background ?? '#f9fafb';
+    $textColor = $konfig->warna_font ?? '#1f2937';
+    $namaToko = $konfig->nama_toko ?? 'OpenCom.';
+    $alamat = $konfig->alamat_toko ?? '-';
+@endphp
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -6,7 +31,21 @@
     <title>Lengkapi Profil - OpenCom</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = { theme: { extend: { colors: { primary: '#4F46E5', secondary: '#111827' } } } }
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"{{ $fontName }}"', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '{{ $primaryColor }}',
+                        customBg: '{{ $bgColor }}',
+                        customNav: '{{ $navColor }}',
+                        customText: '{{ $textColor }}'
+                    }
+                }
+            }
+        }
     </script>
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center py-10">

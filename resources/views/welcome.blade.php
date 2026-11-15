@@ -192,7 +192,7 @@
                                     <span class="text-primary">{{ $firstWord }}</span> 
                                     <span>{{ $restOfTitle }}</span>
                                 </h1>
-                                <p class="text-lg text-gray-300 max-w-md mx-auto md:mx-0">
+                                <p class="text-lg text-white max-w-md mx-auto md:mx-0">
                                     {{ $hero->description }}
                                 </p>
                                 <div class="pt-4">

@@ -105,7 +105,7 @@ class CartController extends Controller
         // 3. Hitung Berat Keranjang
         $keranjang = Keranjang::where('user_id', $pengguna->user_id)->first();
         // 1. Ambil data item keranjang beserta data produknya (Eager Loading)
-        $cartItems = ItemKeranjang::with('produk')->where('cart_id', $keranjang->cart_id)->get();
+        $cartItems = ItemKeranjang::with('product')->where('cart_id', $keranjang->cart_id)->get();
         
         // 2. Pastikan variabel total diinisialisasi (opsional, jika belum dideklarasikan di atas)
         $totalWeight = 0;
@@ -113,7 +113,7 @@ class CartController extends Controller
         foreach ($cartItems as $item) {
             // 3. Ambil berat dari database produk. 
             // Kita beri fallback (?? 100) untuk berjaga-jaga jika ada produk lama yang kolom beratnya masih kosong/null.
-            $beratProduk = $item->produk->berat ?? 100; 
+            $beratProduk = $item->product->berat; 
             
             // 4. Kalikan jumlah beli dengan berat asli produk
             $totalWeight += ($item->jumlah * $beratProduk); 

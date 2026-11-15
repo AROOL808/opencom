@@ -1,3 +1,16 @@
+@php
+    // Ambil data konfigurasi dari database
+    $konfig = \App\Models\Konfigurasi::first();
+    
+    // Set fallback default jika kosong
+    $fontName = $konfig->alamat_font ?? 'Inter';
+    $primaryColor = $konfig->warna_item ?? '#4F46E5';
+    $navColor = $konfig->warna_navigator ?? '#ffffff';
+    $bgColor = $konfig->warna_background ?? '#f9fafb';
+    $textColor = $konfig->warna_font ?? '#1f2937';
+    $namaToko = $konfig->nama_toko ?? 'OpenCom.';
+    $alamat = $konfig->alamat_toko ?? '-';
+@endphp
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -5,11 +18,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Masuk - OpenCom</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
+   <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: { primary: '#4F46E5', secondary: '#111827' }
+                    fontFamily: {
+                        sans: ['"{{ $fontName }}"', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '{{ $primaryColor }}',
+                        customBg: '{{ $bgColor }}',
+                        customNav: '{{ $navColor }}',
+                        customText: '{{ $textColor }}'
+                    }
                 }
             }
         }
